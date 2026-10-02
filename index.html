@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Payment Gateway - Secure Verification</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0d14;
+            --bg-secondary: #121722;
+            --bg-card: rgba(22, 28, 42, 0.75);
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 215, 0, 0.15);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            
+            --gold-primary: #d4af37;
+            --gold-light: #f3e5ab;
+            --gold-gradient: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+            --gold-glow: rgba(212, 175, 55, 0.25);
+            
+            --text-main: #f0f4fc;
+            --text-muted: #8b9bb4;
+            
+            --accent-green: #00e676;
+            --accent-red: #ff3366;
+            --accent-yellow: #ffab00;
+            --accent-blue: #2979ff;
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at 50% 20%, #1e2638 0%, #0a0d14 80%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Glassmorphism VIP Card */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            padding: 34px 24px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background: var(--gold-gradient);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 26px;
+        }
+
+        .vip-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--gold-primary);
+            border-radius: 30px;
+            color: var(--gold-light);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            box-shadow: 0 0 15px var(--gold-glow);
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .locked-state {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 16px;
+        }
+
+        label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gold-light);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0d121c;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: #ffffff;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.25s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            background: #111724;
+            box-shadow: 0 0 15px var(--gold-glow);
+        }
+
+        input::placeholder {
+            color: #55657e;
+        }
+
+        button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--gold-gradient);
+            color: #0c0f17;
+            width: 100%;
+            box-shadow: 0 4px 20px var(--gold-glow);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #252f42;
+            color: #c0ccdf;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #2e3a52;
+            color: #ffffff;
+        }
+
+        .unlocked-state {
+            display: none;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--gold-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 22px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #ffffff;
+            font-weight: 700;
+            text-align: right;
+            word-break: break-word;
+            max-width: 65%;
+        }
+
+        /* Highlighted Badges */
+        .highlight-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .badge-type {
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--gold-light);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+        }
+
+        .badge-currency {
+            background: rgba(41, 121, 255, 0.15);
+            color: #70b4ff;
+            border: 1px solid rgba(41, 121, 255, 0.35);
+        }
+
+        /* Large Bold Amount Display */
+        .amount-display {
+            font-size: 38px;
+            font-weight: 900;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin: 20px 0;
+            letter-spacing: 0.5px;
+            filter: drop-shadow(0 2px 14px rgba(212, 175, 55, 0.35));
+        }
+
+        .payment-method-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Receiver Box and Copy Button */
+        .receiver-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .receiver-number {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--gold-light);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-copy {
+            background: rgba(212, 175, 55, 0.15);
+            border: 1px solid var(--gold-primary);
+            color: var(--gold-light);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-copy:hover {
+            background: var(--gold-gradient);
+            color: #0c0f17;
+            box-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .btn-copy.copied {
+            background: #00e676;
+            color: #0c0f17;
+            border-color: #00e676;
+        }
+
+        /* Instructions Box */
+        .instructions-box {
+            background: rgba(13, 18, 28, 0.85);
+            border: 1px solid var(--border-subtle);
+            border-left: 3px solid var(--gold-primary);
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            margin: 20px 0;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .instructions-box h4 {
+            font-size: 12px;
+            color: var(--gold-light);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .instructions-box ol {
+            margin-left: 18px;
+            font-size: 13px;
+            color: #e4ecfa;
+            line-height: 1.7;
+        }
+
+        .instructions-box li {
+            margin-bottom: 6px;
+        }
+
+        .instructions-box li b {
+            color: var(--gold-light);
+        }
+
+        .admin-custom-note {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-subtle);
+            font-size: 12px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            text-align: center;
+            width: 100%;
+            margin-top: 16px;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: rgba(255, 171, 0, 0.15);
+            color: #ffab00;
+            border: 1px solid rgba(255, 171, 0, 0.3);
+        }
+
+        .status-accepted {
+            background: rgba(0, 230, 118, 0.15);
+            color: #00e676;
+            border: 1px solid rgba(0, 230, 118, 0.3);
+        }
+
+        .status-rejected {
+            background: rgba(255, 51, 102, 0.15);
+            color: #ff3366;
+            border: 1px solid rgba(255, 51, 102, 0.3);
+        }
+
+        .status-expired {
+            background: rgba(255, 255, 255, 0.08);
+            color: #8b9bb4;
+            border: 1px solid var(--border-subtle);
+        }
+
+        /* Confirmation Modal */
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 5, 15, 0.85);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .confirmation-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #151b29;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--gold-light);
+            margin-bottom: 12px;
+        }
+
+        .modal-message {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+        }
+
+        .error-message {
+            background: rgba(255, 51, 102, 0.15);
+            color: #ff3366;
+            border: 1px solid rgba(255, 51, 102, 0.3);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .info-message {
+            background: rgba(41, 121, 255, 0.15);
+            color: #64b5f6;
+            border: 1px solid rgba(41, 121, 255, 0.3);
+            padding: 14px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #151b29;
+            border: 1px solid var(--border-color);
+            color: var(--gold-light);
+            padding: 14px 22px;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            font-size: 13px;
+            font-weight: 700;
+            animation: slideIn 0.3s ease;
+            max-width: 320px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-top: 2px solid #000;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .card { padding: 24px 16px; }
+            .logo { font-size: 22px; }
+            .amount-display { font-size: 32px; }
+            .receiver-number { font-size: 15px; }
+            .modal-content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div class="vip-badge">𒆜𝐀𝐞𝐭𝐡𝐞𝐫 𝐅𝐨𝐫𝐠𝐞𒆜 PAYMENT GATEWAY</div>
+                <div class="logo">⚡ SECURE VERIFICATION</div>
+                <div class="subtitle">Enter your Telegram Username to access your invoice</div>
+            </div>
+
+            <!-- Login / Search with Username -->
+            <div id="lockedState" class="locked-state">
+                <div class="form-group">
+                    <label for="telegramUsername">Telegram Username</label>
+                    <input 
+                        type="text" 
+                        id="telegramUsername" 
+                        placeholder="@your_username"
+                    >
+                </div>
+                <button class="btn-primary" id="continueBtn">Continue ➔</button>
+            </div>
+
+            <!-- Unlocked State -->
+            <div id="unlockedState" class="unlocked-state">
+                <div id="errorContainer"></div>
+
+                <div class="section-title">⚡ Payment Request Details</div>
+
+                <div id="requestNotFound" style="display: none;">
+                    <div class="info-message">
+                        No active payment request was found for this Username.<br>Please contact administrator support.
+                    </div>
+                    <button class="btn-secondary" onclick="resetPanel()" style="width: 100%; margin-top: 10px;">Back</button>
+                </div>
+
+                <div id="paymentInfo" style="display: none;">
+                    <div class="info-row">
+                        <div class="info-label">Username</div>
+                        <div class="info-value" id="displayUsername" style="color: var(--gold-light); font-weight: 800;">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">User ID</div>
+                        <div class="info-value" id="displayUserId">-</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Payment Method</div>
+                        <div class="info-value"><span class="payment-method-badge" id="displayMethod">-</span></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Transaction Type</div>
+                        <div class="info-value"><span class="highlight-badge badge-type" id="displayTransactionType">-</span></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Currency</div>
+                        <div class="info-value"><span class="highlight-badge badge-currency" id="displayCurrency">BDT</span></div>
+                    </div>
+
+                    <!-- Highlighted Bold Amount -->
+                    <div class="amount-display" id="displayAmount">৳ 0</div>
+
+                    <div class="section-title">Receiver Account</div>
+                    <div class="info-row">
+                        <div class="info-label" id="receiverLabel">Receiver</div>
+                        <div class="info-value">
+                            <div class="receiver-container">
+                                <span class="receiver-number" id="displayReceiver">-</span>
+                                <button type="button" class="btn-copy" id="copyBtn" onclick="copyReceiverNumber()">📋 Copy</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auto Step-by-Step Payment Instructions -->
+                    <div class="instructions-box">
+                        <h4>📌 Payment Instructions</h4>
+                        <div id="displayInstructions"></div>
+                    </div>
+
+                    <!-- Submission Form -->
+                    <div id="paymentSubmissionForm" style="display: none;">
+                        <div class="section-title">Submit Transaction Proof</div>
+                        <div class="form-group">
+                            <label for="senderNumber">Sender Number / Account</label>
+                            <input 
+                                type="text" 
+                                id="senderNumber" 
+                                placeholder="Enter sender wallet / account number"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="transactionId">Transaction ID (TrxID)</label>
+                            <input 
+                                type="text" 
+                                id="transactionId" 
+                                placeholder="Enter TrxID / Transaction Hash"
+                            >
+                        </div>
+                        <button class="btn-primary" id="submitPaymentBtn">Submit Payment</button>
+                    </div>
+
+                    <div id="paymentStatusContainer" style="display: none;">
+                        <div id="paymentStatus"></div>
+                    </div>
+
+                    <button class="btn-secondary" onclick="resetPanel()" style="width: 100%; margin-top: 16px;">Log Out / Switch User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="confirmation-modal">
+        <div class="modal-content">
+            <div class="modal-title">Confirm Submission</div>
+            <div class="modal-message">
+                Please double-check your Sender Number and Transaction ID. Once submitted, it will be immediately queued for VIP admin verification.
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeConfirmation()">Cancel</button>
+                <button class="btn-primary" id="confirmSubmitBtn">Confirm & Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE SDKs (Compat versions for Global Web Browser Execution) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+
+    <script>
+        // ============================================================
+        // FIREBASE CONFIGURATION
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCoEUzJBWMz7mpgjwCehMGgzEezG028xNw",
+            authDomain: "payment-gateway-7a50a.firebaseapp.com",
+            databaseURL: "https://payment-gateway-7a50a-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "payment-gateway-7a50a",
+            storageBucket: "payment-gateway-7a50a.firebasestorage.app",
+            messagingSenderId: "137436397667",
+            appId: "1:137436397667:web:77fc99ea415be23fdaf856",
+            measurementId: "G-20MJ6ZQ05J"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // STATE MANAGEMENT
+        let currentUserId = null;
+        let currentPaymentRequest = null;
+        let paymentSubmitted = false;
+        let statusListener = null;
+        let currentRequestRef = null;
+
+        // ============================================================
+        // UTILITY FUNCTIONS
+        // ============================================================
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            if (type === 'error') {
+                toast.style.borderColor = '#ff3366';
+                toast.style.color = '#ff3366';
+            } else if (type === 'success') {
+                toast.style.borderColor = '#00e676';
+                toast.style.color = '#00e676';
+            } else {
+                toast.style.borderColor = '#d4af37';
+                toast.style.color = '#f3e5ab';
+            }
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.innerHTML = `<div class="error-message">⚠️ ${message}</div>`;
+        }
+
+        function clearError() {
+            document.getElementById('errorContainer').innerHTML = '';
+        }
+
+        function showLoading(btnElement, show = true) {
+            if (show) {
+                btnElement.disabled = true;
+                btnElement.innerHTML = '<div class="spinner"><div class="loading"></div> Processing...</div>';
+            } else {
+                btnElement.disabled = false;
+            }
+        }
+
+        function resetPanel() {
+            currentUserId = null;
+            currentPaymentRequest = null;
+            paymentSubmitted = false;
+            if (currentRequestRef && statusListener) {
+                currentRequestRef.off('value', statusListener);
+                statusListener = null;
+                currentRequestRef = null;
+            }
+            document.getElementById('lockedState').style.display = 'flex';
+            document.getElementById('unlockedState').style.display = 'none';
+            document.getElementById('telegramUsername').value = '';
+            document.getElementById('telegramUsername').focus();
+            clearError();
+        }
+
+        // ============================================================
+        // COPY RECEIVER NUMBER FEATURE
+        // ============================================================
+        function copyReceiverNumber() {
+            const receiverText = document.getElementById('displayReceiver').textContent.trim();
+            const copyBtn = document.getElementById('copyBtn');
+
+            if (!receiverText || receiverText === '-') {
+                showToast('No number to copy', 'error');
+                return;
+            }
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(receiverText).then(() => {
+                    handleCopySuccess(copyBtn);
+                }).catch(() => {
+                    fallbackCopyText(receiverText, copyBtn);
+                });
+            } else {
+                fallbackCopyText(receiverText, copyBtn);
+            }
+        }
+
+        function fallbackCopyText(text, copyBtn) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                handleCopySuccess(copyBtn);
+            } catch (err) {
+                showToast('Failed to copy', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function handleCopySuccess(btn) {
+            btn.innerHTML = '✓ Copied!';
+            btn.classList.add('copied');
+            showToast('Receiver number copied to clipboard!', 'success');
+            setTimeout(() => {
+                btn.innerHTML = '📋 Copy';
+                btn.classList.remove('copied');
+            }, 2500);
+        }
+
+        // ============================================================
+        // USER VERIFICATION BY USERNAME (Flexible Matching)
+        // ============================================================
+        document.getElementById('continueBtn').addEventListener('click', verifyUser);
+        document.getElementById('telegramUsername').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                verifyUser();
+            }
+        });
+
+        function verifyUser() {
+            const inputVal = document.getElementById('telegramUsername').value.trim();
+            clearError();
+
+            if (!inputVal) {
+                showError('Please enter your Telegram Username');
+                return;
+            }
+
+            const cleanInput = inputVal.toLowerCase().replace(/^@/, '');
+            const continueBtn = document.getElementById('continueBtn');
+            showLoading(continueBtn, true);
+
+            const requestsRef = database.ref('paymentGateway/paymentRequests');
+            requestsRef.once('value')
+                .then(snapshot => {
+                    continueBtn.disabled = false;
+                    continueBtn.innerHTML = 'Continue ➔';
+
+                    const data = snapshot.val();
+                    if (!data) {
+                        document.getElementById('paymentInfo').style.display = 'none';
+                        document.getElementById('requestNotFound').style.display = 'block';
+                        document.getElementById('lockedState').style.display = 'none';
+                        document.getElementById('unlockedState').style.display = 'block';
+                        return;
+                    }
+
+                    // Flexible match by username (with or without @) or User ID
+                    const matchedRequests = [];
+                    snapshot.forEach(child => {
+                        const req = { requestId: child.key, ...child.val() };
+                        const reqUser = (req.username || '').toLowerCase().replace(/^@/, '');
+                        const reqId = (req.userId || '').toString().toLowerCase();
+
+                        if (reqUser === cleanInput || reqId === cleanInput || ('@' + reqUser) === inputVal.toLowerCase()) {
+                            matchedRequests.push(req);
+                        }
+                    });
+
+                    if (matchedRequests.length === 0) {
+                        document.getElementById('paymentInfo').style.display = 'none';
+                        document.getElementById('requestNotFound').style.display = 'block';
+                        document.getElementById('lockedState').style.display = 'none';
+                        document.getElementById('unlockedState').style.display = 'block';
+                        return;
+                    }
+
+                    // Sort newest requests first
+                    matchedRequests.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+                    // Prioritize pending/submitted first, else latest
+                    const activeRequest = matchedRequests.find(r => r.status === 'pending' || r.status === 'submitted') || matchedRequests[0];
+
+                    currentUserId = activeRequest.userId;
+                    currentPaymentRequest = activeRequest;
+                    displayPaymentInfo();
+                    document.getElementById('lockedState').style.display = 'none';
+                    document.getElementById('unlockedState').style.display = 'block';
+                    setupStatusListener();
+                })
+                .catch(error => {
+                    continueBtn.disabled = false;
+                    continueBtn.innerHTML = 'Continue ➔';
+                    showError('Error verifying username: ' + error.message);
+                });
+        }
+
+        // ============================================================
+        // AUTOMATIC PAYMENT INSTRUCTIONS GENERATOR
+        // ============================================================
+        function generateAutoInstructions(method, type, receiver, amount, currencySymbol, adminCustomText) {
+            let steps = [];
+            const methodLower = (method || '').toLowerCase();
+            const isCashOut = (type || '').toLowerCase().includes('cash out');
+
+            if (methodLower.includes('bkash')) {
+                if (isCashOut) {
+                    steps = [
+                        `আপনার বিকাশ অ্যাপে লগইন করুন অথবা ডায়াল করুন <b>*247#</b>`,
+                        `মেন্যু থেকে <b>Cash Out (ক্যাশ আউট)</b> অপশন সিলেক্ট করুন।`,
+                        `উপরে উল্লেখিত ক্যাশ আউট নম্বর (<b>${receiver}</b>) প্রবেশ করান।`,
+                        `সঠিক টাকার পরিমাণ (<b>${currencySymbol} ${amount}</b>) প্রদান করে আপনার পিন দিয়ে ক্যাশ আউট সম্পন্ন করুন।`,
+                        `পেমেন্ট সফল হওয়ার পর প্রাপ্ত <b>TrxID (Transaction ID)</b> এবং যে নম্বর থেকে পাঠিয়েছেন তা নিচে সাবমিট করুন।`
+                    ];
+                } else {
+                    steps = [
+                        `আপনার বিকাশ অ্যাপে লগইন করুন অথবা ডায়াল করুন <b>*247#</b>`,
+                        `মেন্যু থেকে <b>Send Money (সেন্ড মানি)</b> অপশন সিলেক্ট করুন।`,
+                        `উপরে দেওয়া বিকাশ নম্বরটি (<b>${receiver}</b>) প্রবেশ করান।`,
+                        `সঠিক টাকার পরিমাণ (<b>${currencySymbol} ${amount}</b>) প্রদান করে পিন দিয়ে পাঠিয়ে দিন।`,
+                        `ট্রানজেকশন সফল হলে মেসেজে পাওয়া <b>TrxID (Transaction ID)</b> ও আপনার সেন্ডার নম্বর নিচে সাবমিট করুন।`
+                    ];
+                }
+            } else if (methodLower.includes('nagad')) {
+                if (isCashOut) {
+                    steps = [
+                        `আপনার নগদ অ্যাপ ওপেন করুন অথবা ডায়াল করুন <b>*167#</b>`,
+                        `মেন্যু থেকে <b>Cash Out (ক্যাশ আউট)</b> সিলেক্ট করুন।`,
+                        `উপরে উল্লেখিত নগদ নম্বরটি (<b>${receiver}</b>) লিখুন।`,
+                        `টাকার পরিমাণ (<b>${currencySymbol} ${amount}</b>) বসিয়ে পিন দিয়ে কনফার্ম করুন।`,
+                        `সফল হওয়ার পর প্রাপ্ত <b>TrxID</b> এবং আপনার প্রেরক নম্বরটি নিচে সাবমিট করুন।`
+                    ];
+                } else {
+                    steps = [
+                        `আপনার নগদ অ্যাপ ওপেন করুন অথবা ডায়াল করুন <b>*167#</b>`,
+                        `মেন্যু থেকে <b>Send Money (সেন্ড মানি)</b> সিলেক্ট করুন।`,
+                        `উপরে প্রদর্শিত নগদ নম্বরটি (<b>${receiver}</b>) প্রবেশ করান।`,
+                        `টাকার পরিমাণ (<b>${currencySymbol} ${amount}</b>) দিয়ে পিন টাইপ করে পাঠিয়ে দিন।`,
+                        `প্রাপ্ত <b>TrxID (ট্রানজেকশন আইডি)</b> এবং প্রেরক নম্বরটি নিচে লিখে সাবমিট করুন।`
+                    ];
+                }
+            } else if (methodLower.includes('rocket')) {
+                steps = [
+                    `আপনার রকেট অ্যাপ ওপেন করুন অথবা <b>*322#</b> ডায়াল করুন।`,
+                    `<b>${type || 'Send Money / Cash Out'}</b> অপশন সিলেক্ট করুন।`,
+                    `উপরে দেওয়া রকেট নম্বরটি (<b>${receiver}</b>) দিন।`,
+                    `নির্ধারিত পরিমাণ (<b>${currencySymbol} ${amount}</b>) টাকা পাঠিয়ে দিন।`,
+                    `সফল মেসেজের <b>TrxID</b> ও আপনার সেন্ডার নম্বরটি নিচে সাবমিট করুন।`
+                ];
+            } else if (methodLower.includes('binance')) {
+                steps = [
+                    `আপনার Binance App ওপেন করে <b>Binance Pay / Transfer</b> অপশনে যান।`,
+                    `রিসিভারের Pay ID / UID হিসেবে (<b>${receiver}</b>) বসিয়ে দিন।`,
+                    `কারেন্সি হিসেবে <b>${currencySymbol === '$' ? 'USDT / USD' : 'Crypto'}</b> নির্বাচন করে <b>${amount}</b> ট্রান্সফার করুন।`,
+                    `ট্রান্সফার সম্পন্ন হলে প্রাপ্ত <b>Order ID / TxID</b> ও আপনার Binance Pay ID/UID নিচে সাবমিট করুন।`
+                ];
+            } else {
+                steps = [
+                    `উপরে প্রদর্শিত একাউন্ট নম্বরে (<b>${receiver}</b>) সঠিক টাকা পাঠিয়ে দিন।`,
+                    `পেমেন্ট সফল হওয়ার পর <b>Transaction ID</b> ও আপনার প্রেরক নাম্বারটি নিচে সাবমিট করুন।`
+                ];
+            }
+
+            let html = '<ol>';
+            steps.forEach(step => {
+                html += `<li>${step}</li>`;
+            });
+            html += '</ol>';
+
+            if (adminCustomText && adminCustomText.trim().length > 0) {
+                html += `<div class="admin-custom-note">💬 <b>এডমিন নোট:</b> ${adminCustomText}</div>`;
+            }
+
+            return html;
+        }
+
+        // ============================================================
+        // DISPLAY PAYMENT INFORMATION
+        // ============================================================
+        function displayPaymentInfo() {
+            if (!currentPaymentRequest) return;
+
+            const request = currentPaymentRequest;
+            document.getElementById('requestNotFound').style.display = 'none';
+            document.getElementById('paymentInfo').style.display = 'block';
+            document.getElementById('paymentSubmissionForm').style.display = 'none';
+            document.getElementById('paymentStatusContainer').style.display = 'none';
+
+            // Username & IDs
+            document.getElementById('displayUsername').textContent = request.username || '-';
+            document.getElementById('displayUserId').textContent = request.userId || '-';
+            document.getElementById('displayMethod').textContent = request.paymentMethod || '-';
+            
+            // Bold & Highlighted Transaction Type & Currency
+            document.getElementById('displayTransactionType').textContent = request.transactionType || '-';
+            document.getElementById('displayCurrency').textContent = request.currency || 'BDT';
+
+            // Bold Highlighted Amount
+            const currencySymbol = request.currency === 'USDT' || request.currency === 'USD' ? '$' : '৳';
+            document.getElementById('displayAmount').textContent = `${currencySymbol} ${request.amount}`;
+
+            // Receiver Info
+            const receiverLabel = document.getElementById('receiverLabel');
+            const displayReceiver = document.getElementById('displayReceiver');
+            if (request.paymentMethod === 'Binance') {
+                receiverLabel.textContent = 'Binance ID / UID';
+            } else {
+                receiverLabel.textContent = `${request.paymentMethod} Number`;
+            }
+            displayReceiver.textContent = request.receiver || '-';
+
+            // Automated Step-by-Step Instructions
+            const instructionsDiv = document.getElementById('displayInstructions');
+            instructionsDiv.innerHTML = generateAutoInstructions(
+                request.paymentMethod,
+                request.transactionType,
+                request.receiver || '',
+                request.amount,
+                currencySymbol,
+                request.instructions
+            );
+
+            // Show Form based on Status
+            if (request.status === 'pending') {
+                document.getElementById('paymentSubmissionForm').style.display = 'block';
+                document.getElementById('paymentStatusContainer').style.display = 'none';
+                document.getElementById('senderNumber').value = '';
+                document.getElementById('transactionId').value = '';
+                paymentSubmitted = false;
+            } else {
+                document.getElementById('paymentSubmissionForm').style.display = 'none';
+                displayPaymentStatus();
+            }
+        }
+
+        // ============================================================
+        // PAYMENT SUBMISSION
+        // ============================================================
+        document.getElementById('submitPaymentBtn').addEventListener('click', function() {
+            const senderNumber = document.getElementById('senderNumber').value.trim();
+            const transactionId = document.getElementById('transactionId').value.trim();
+
+            if (!senderNumber) {
+                showError('Please enter sender number or wallet');
+                return;
+            }
+
+            if (!transactionId) {
+                showError('Please enter the transaction ID (TrxID)');
+                return;
+            }
+
+            clearError();
+            document.getElementById('confirmationModal').classList.add('active');
+        });
+
+        document.getElementById('confirmSubmitBtn').addEventListener('click', submitPayment);
+
+        function submitPayment() {
+            closeConfirmation();
+
+            if (!currentPaymentRequest || !currentPaymentRequest.requestId) return;
+
+            const senderNumber = document.getElementById('senderNumber').value.trim();
+            const transactionId = document.getElementById('transactionId').value.trim();
+            const submitBtn = document.getElementById('submitPaymentBtn');
+
+            showLoading(submitBtn, true);
+
+            const paymentData = {
+                payment: {
+                    senderNumber: senderNumber,
+                    transactionId: transactionId,
+                    submittedAmount: currentPaymentRequest.amount,
+                    submittedAt: new Date().toISOString()
+                },
+                status: 'submitted'
+            };
+
+            database.ref(`paymentGateway/paymentRequests/${currentPaymentRequest.requestId}`).update(paymentData)
+                .then(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Submit Payment';
+                    showToast('Payment submitted successfully!', 'success');
+                    paymentSubmitted = true;
+                    currentPaymentRequest.status = 'submitted';
+                    displayPaymentStatus();
+                })
+                .catch(error => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Submit Payment';
+                    showError('Error submitting payment: ' + error.message);
+                });
+        }
+
+        function closeConfirmation() {
+            document.getElementById('confirmationModal').classList.remove('active');
+        }
+
+        // ============================================================
+        // PAYMENT STATUS DISPLAY
+        // ============================================================
+        function displayPaymentStatus() {
+            if (!currentPaymentRequest) return;
+
+            const statusContainer = document.getElementById('paymentStatusContainer');
+            const statusDiv = document.getElementById('paymentStatus');
+
+            document.getElementById('paymentSubmissionForm').style.display = 'none';
+            statusContainer.style.display = 'block';
+
+            const status = currentPaymentRequest.status || 'pending';
+            let statusHTML = '';
+
+            switch(status) {
+                case 'submitted':
+                    statusHTML = '<div class="status-badge status-pending">⚡ Payment Submitted - Awaiting Admin Verification</div>';
+                    break;
+                case 'accepted':
+                    statusHTML = '<div class="status-badge status-accepted">✓ Payment Verified & Accepted</div>';
+                    break;
+                case 'rejected':
+                    statusHTML = `<div class="status-badge status-rejected">✗ Payment Rejected</div>
+                    ${currentPaymentRequest.verification?.rejectionReason ? `<div class="error-message" style="margin-top: 12px;">Reason: ${currentPaymentRequest.verification.rejectionReason}</div>` : ''}`;
+                    break;
+                case 'expired':
+                    statusHTML = '<div class="status-badge status-expired">Payment Request Expired</div>';
+                    break;
+                case 'cancelled':
+                    statusHTML = '<div class="status-badge status-expired">Payment Request Cancelled</div>';
+                    break;
+                default:
+                    statusHTML = '<div class="status-badge status-pending">Pending Payment</div>';
+            }
+
+            statusDiv.innerHTML = statusHTML;
+        }
+
+        // ============================================================
+        // REAL-TIME STATUS LISTENER
+        // ============================================================
+        function setupStatusListener() {
+            if (!currentPaymentRequest || !currentPaymentRequest.requestId) return;
+
+            if (currentRequestRef && statusListener) {
+                currentRequestRef.off('value', statusListener);
+            }
+
+            currentRequestRef = database.ref(`paymentGateway/paymentRequests/${currentPaymentRequest.requestId}`);
+            statusListener = currentRequestRef.on('value', snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    currentPaymentRequest = data;
+                    displayPaymentInfo();
+                }
+            });
+        }
+
+        // Initialize focus
+        document.getElementById('telegramUsername').focus();
+    </script>
+</body>
+</html>
